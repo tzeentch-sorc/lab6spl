@@ -133,7 +133,7 @@ for(; current != NULL; current = current->next){
     }
 }
 
-void memalloc_debug_struct_info( FILE* f, struct mem const* const address ) {
+void memalloc_debug_struct_info( FILE* f, struct mem* address ) {
     size_t i;
     fprintf( f, "start: %p\nsize: %lu\nis_free: %d\n",
              (void*)address,
@@ -155,9 +155,28 @@ void* _calloc(size_t num, size_t size){
     return _malloc(size*num);
 }
 
+void* _memcpy(void* src, void* dest, size_t count){
+    int* srcPtr = src;
+    int* destPtr = dest;
+
+    for(size_t i = 0; i < count; i++){
+        *destPtr = *srcPtr;
+        destPtr++;
+        srcPtr++;
+    }
+}
+
 void* _realloc(void* ptr, size_t new_size){
     struct mem* blocks = (struct mem*) ((size_t)ptr - sizeof(mem));
     blocks->is_free = true;
+    if(blocks->capacity > new_size){
+        struct mem* new = _malloc(new_size);
+        _memcpy(new, ptr, sizeof(ptr));
+        _free(ptr);
+        return new;
+    }
+    else{
+        return _malloc(new_size);
+    }
 
-    return _malloc(new_size);
 }
